@@ -1,6 +1,7 @@
 
 import unittest
-from Chessnut.game import Game, InvalidMove
+from collections import Counter
+from Chessir.game import Game, InvalidMove
 
 
 # Default FEN string
@@ -68,7 +69,7 @@ class GameTest(unittest.TestCase):
         self.game = Game(fen=fen)
         self.assertIn('c7c6', self.game.get_moves())
         fen = '8/8/2p2p2/7r/7P/3R1P2/P3R1P1/2k1K3 w - - 0 47'
-        self.game = Game(fen=fen, validate=False)
+        self.game = Game(fen=fen)
         self.assertNotIn('e1c1', self.game.get_moves())
 
         # castling through check
@@ -82,10 +83,50 @@ class GameTest(unittest.TestCase):
         self.game = Game(fen=fen)
         self.assertNotIn('e1c8', self.game.get_moves(idx_list=[60]))
 
-        # Github Issue 9
+        # Github Issue 9 from Chessnut
         fen = 'r3kb1r/p1p2pp1/2p4p/3Pp3/6b1/2P5/PP1NN2P/R2QK1q1 w Qkq - 0 16'
         self.game = Game(fen=fen)
         self.assertEqual(['d2f1', 'e2g1'], self.game.get_moves())
+
+        # pinned piece
+        fen = '1k2r3/4N3/1r1RK3/3BQPp1/2q3b1/4r3/8/8 w - g6 0 1'
+        moves = ['e6f6', 'e6f7', 'e6d7', 'd6c6', 'd6b6', 'd5c4', 'e5e4', 'e5e3']
+        self.game = Game(fen=fen)
+        self.assertEqual(set(self.game.get_moves()), set(moves))
+
+        # double check
+        fen = '2b1rn2/8/2k1R3/4K3/2q1B3/8/8/8 b - - 0 1'
+        moves = ['c6d7', 'c6c7', 'c6b5', 'c6c5']
+        self.game = Game(fen=fen)
+        self.assertEqual(set(self.game.get_moves()), set(moves))
+
+        # single check
+        fen = '7k/2R5/pr2p1pr/2q2n2/b2b4/1N2Q1P1/2KP3P/1N5R w - - 2 49'
+        moves = ['c2d3', 'c2d1', 'c7c5', 'e3c3', 'b1c3']
+        self.game = Game(fen=fen)
+        self.assertEqual(set(self.game.get_moves()), set(moves))
+
+        # king can't attack by castling ray
+        # white kingside
+        fen = '8/8/7p/8/8/8/8/4K1k1 b - - 0 1'
+        moves = ['g1h1', 'g1h2', 'g1g2', 'h6h5']
+        self.game = Game(fen=fen)
+        self.assertEqual(set(self.game.get_moves()), set(moves))
+        # white queenside
+        fen = '8/8/7p/8/8/8/8/2k1K3 b - - 0 1'
+        moves = ['c1c2', 'c1b2', 'c1b1', 'h6h5']
+        self.game = Game(fen=fen)
+        self.assertEqual(set(self.game.get_moves()), set(moves))
+        # black kingside
+        fen = '4k1K1/8/8/8/8/7P/8/8 w - - 0 1'
+        moves = ['g8h8', 'g8g7', 'g8h7', 'h3h4']
+        self.game = Game(fen=fen)
+        self.assertEqual(set(self.game.get_moves()), set(moves))
+        # black queenside
+        fen = '2K1k3/8/8/8/8/7P/8/8 w - - 0 1'
+        moves = ['c8b8', 'c8b7', 'c8c7', 'h3h4']
+        self.game = Game(fen=fen)
+        self.assertEqual(set(self.game.get_moves()), set(moves))
 
     def test_apply_move(self):
         # pawn promotion
@@ -104,7 +145,7 @@ class GameTest(unittest.TestCase):
         moves = ['d8c8', 'd8b8', 'd8a8', 'e8f8', 'e8d7', 'e8e7', 'e8f7',
                  'g8f7', 'g8e6', 'g8d5', 'g8c4', 'g8b3', 'g8a2', 'g8h7']
         self.game.reset(fen='Q2qk1b1/8/8/8/8/8/7P/4K3 b - - 0 1')
-        self.assertEqual(self.game.get_moves(), moves)
+        self.assertEqual(set(self.game.get_moves()), set(moves))
         self.game.apply_move('d8b8')
         moves = set(self.game.get_moves())
         self.assertIn('a8b8', moves)
@@ -163,7 +204,7 @@ class GameTest(unittest.TestCase):
         # invalid move
         self.game.reset()
         with self.assertRaises(InvalidMove):
-            self.game.apply_move('e2e2')
+            self.game.apply_move('e2e2', validate=True)
 
     def test_status(self):
 
@@ -183,9 +224,72 @@ class GameTest(unittest.TestCase):
         game = Game(fen='8/8/8/8/8/7k/5q2/7K w - - 0 37')
         self.assertEqual(game.status, Game.STALEMATE)
 
+        # DRAW
+        # 50 move rule
+        self.game = Game(fen='8/8/3k4/p2p2p1/P2P2P1/3K4/8/8 w - - 99 140')
+        self.assertEqual(self.game.status, Game.NORMAL)
+        self.game.apply_move('d3e3')
+        self.assertEqual(self.game.status, Game.DRAW)
+        
+        # insufficient material
+        # one bishop
+        self.game = Game(fen='8/8/2bk4/8/4B3/8/3K4/8 w - - 0 1')
+        self.assertEqual(self.game.status, Game.DRAW)
+        # two knights
+        self.game = Game(fen='8/8/2nkn3/8/8/2NN4/3K4/8 w - - 0 1')
+        self.assertEqual(self.game.status, Game.DRAW)
+        # bishop and knight
+        self.game = Game(fen='8/8/2bk4/8/4B3/3N4/3K4/8 w - - 0 1')
+        self.assertEqual(self.game.status, Game.NORMAL)
+        # already in check
+        self.game = Game(fen='n7/2K5/8/8/8/6k1/8/8 w - - 0 1')
+        self.assertEqual(self.game.status, Game.CHECK)
+
+        # three-fold repetition
+        self.game = Game(fen='b2rk1r1/K2p2p1/2qP2P1/3p4/8/8/8/4R3 b - - 0 50')
+        self.game.apply_move('e8f8')
+        self.game.apply_move('e1f1')
+        self.game.apply_move('f8e8')
+        self.game.apply_move('f1e1')
+        self.game.apply_move('e8f8')
+        self.game.apply_move('e1f1')
+        self.game.apply_move('f8e8')
+        self.assertEqual(self.game.status, Game.NORMAL)
+        self.game.apply_move('f1e1')
+        self.assertEqual(self.game.status, Game.DRAW)
+
+    def test_game_moves_property(self):
+        # Game.moves==None after reset
+        self.game.reset()
+        self.assertIsNone(self.game.moves)
+        # Game.moves==None after apply_move
+        self.game.apply_move('e2e4')
+        self.assertIsNone(self.game.moves)
+        # Game.moves==None after set_fen
+        self.game.set_fen('rnbqkbnr/ppp1pppp/8/8/3pP3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1')
+        self.assertIsNone(self.game.moves)
+        # Game.moves populated after get_moves
+        self.game.get_moves()
+        self.assertIsNotNone(self.game.moves)
+
+    def test_positions_count_property(self):
+        # after reset
+        self.game.reset('b2r3r/4Rp1p/pk1q1np1/Np1P4/3p1Q2/P4PPB/1PP4P/1K6 w - - 2 26')
+        self.assertEqual(self.game.positions_count, Counter({'b2r3r/4Rp1p/pk1q1np1/Np1P4/3p1Q2/P4PPB/1PP4P/1K6': 1}))
+        # after apply_move
+        self.game.apply_move('f4d4')
+        self.assertEqual(self.game.positions_count, Counter({'b2r3r/4Rp1p/pk1q1np1/Np1P4/3p1Q2/P4PPB/1PP4P/1K6': 1, 'b2r3r/4Rp1p/pk1q1np1/Np1P4/3Q4/P4PPB/1PP4P/1K6': 1}))
+        # after set_fen
+        self.game.set_fen('rnbqkbnr/ppp1pppp/8/8/3pP3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1')
+        self.assertEqual(self.game.positions_count, Counter({'b2r3r/4Rp1p/pk1q1np1/Np1P4/3p1Q2/P4PPB/1PP4P/1K6': 1, 'b2r3r/4Rp1p/pk1q1np1/Np1P4/3Q4/P4PPB/1PP4P/1K6': 1, 'rnbqkbnr/ppp1pppp/8/8/3pP3/8/PPPP1PPP/RNBQKBNR': 1}))
+
+    def test_get_material_string(self):
+        self.game = Game()
+        self.assertEqual(Counter(self.game.get_material_string()), Counter('rnbqkbnrppppppppPPPPPPPPRNBQKBNR'))
+
     def test_last_line_pawn_check(self):
         # If a pawn is able to expose a king on its last line
-        game = Game(fen='8/5b2/8/6P1/8/p7/1pk5/K7 w - - 0 51')
-        self.assertEqual(game.status, Game.CHECKMATE)
+        self.game = Game(fen='8/5b2/8/6P1/8/p7/1pk5/K7 w - - 0 51')
+        self.assertEqual(self.game.status, Game.CHECKMATE)
         
 
