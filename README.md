@@ -96,4 +96,4 @@ print(chessgame.status == chessgame.CHECKMATE) # True
 
 ```
 
-<!-- test -->
+<!-- test 2 -->
