@@ -22,7 +22,7 @@ Like Chessnut, **Chessir** is not written for speed, but it is about twenty time
 
 `pip` is the easiest way to install **Chessir**. It can be installed directly from the [pypi](https://pypi.python.org/) [package](https://pypi.python.org/pypi/Chessir):
 
-`pip install Chessir`
+`pip install chessir`
 
 ### As a Module
 
@@ -95,3 +95,5 @@ print(chessgame.status) # 2
 print(chessgame.status == chessgame.CHECKMATE) # True
 
 ```
+
+<!-- test -->
