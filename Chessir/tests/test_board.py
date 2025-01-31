@@ -1,5 +1,5 @@
 
-from Chessnut.board import Board
+from Chessir.board import Board
 import unittest
 
 

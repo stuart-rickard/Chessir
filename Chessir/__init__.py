@@ -29,4 +29,4 @@ To use Chessnut, import the Game class from the module:
 """
 
 # import module functions and promote into the package namespace
-from Chessnut.game import Game
+from Chessir.game import Game

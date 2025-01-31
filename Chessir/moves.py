@@ -129,3 +129,52 @@ for i in range(8):
     MOVES['p'][8 + i][IDX].append(24 + i)
     MOVES['P'][55 - i][IDX].append(39 - i)
     IDX = 1
+
+# All the code and comments above are from Chessnut
+
+"""
+Chessir adapts the above concept of rays from Chessnut and uses them to evaluate attacks on a target square.
+
+RAYS_FROM_TARGET is a dictionary that contains two keys, 'w' and 'b', corresponding to the color of the player's pieces that may be attacked. Each key has a value that is a dictionary which contains data that is similar to the data in MOVES. That is, each color-coded dictionary is organized by piece type, then index, then ray direction.
+
+So, similarly to MOVES as explained above:
+
+RAYS_FROM_TARGET['w']['q'][7][0] = [6, 5, 4, 3, 2, 1, 0]  # sorted by distance from idx = 7
+
+And, generalizing:
+
+RAYS_FROM_TARGET[<color>][<piece>][<starting index>][<direction>] = [list of moves]
+
+The square_attacked method of Game uses RAYS_FROM_TARGET to search out from a target square until a piece is encountered. If, for example, the encountered piece is of the same type as the piece for the current ray, that encountered piece is attacking the target square.
+"""
+
+# Create separate dictionaries for each color
+RAYS_FROM_TARGET = {
+    'w': {key: value for key, value in MOVES.items() if key.islower()},
+    'b': {key: value for key, value in MOVES.items() if key.isupper()}
+}
+
+# Create new rays for attacks by pawns; the pawn rays in MOVES won't work because pawns can't attack straight ahead.
+ATTACK_SOURCE_FROM_BLACK_PAWNS = [[] for _ in range(64)]
+for i in range(16, 64):
+    if i % 8 == 0:
+        ATTACK_SOURCE_FROM_BLACK_PAWNS[i].append([i-7])
+    elif i % 8 == 7:
+        ATTACK_SOURCE_FROM_BLACK_PAWNS[i].append([i-9])
+    else:
+        ATTACK_SOURCE_FROM_BLACK_PAWNS[i].extend([[i-9],[i-7]])
+
+ATTACK_SOURCE_FROM_WHITE_PAWNS = [[] for _ in range(64)]
+for i in range(0, 48):
+    ATTACK_SOURCE_FROM_WHITE_PAWNS[i] = ATTACK_SOURCE_FROM_BLACK_PAWNS[i+16]
+
+RAYS_FROM_TARGET['w']['p'] = ATTACK_SOURCE_FROM_BLACK_PAWNS
+RAYS_FROM_TARGET['b']['P'] = ATTACK_SOURCE_FROM_WHITE_PAWNS
+
+# Remove castling moves from the kings' RAYS_FROM_TARGET; kings can't attack using castling moves
+RAYS_FROM_TARGET['w']['k'] = deepcopy(RAYS_FROM_TARGET['w']['k'])
+RAYS_FROM_TARGET['b']['K'] = deepcopy(RAYS_FROM_TARGET['b']['K'])
+RAYS_FROM_TARGET['w']['k'][4][0].remove(6)
+RAYS_FROM_TARGET['w']['k'][4][1].remove(2)
+RAYS_FROM_TARGET['b']['K'][60][0].remove(62)
+RAYS_FROM_TARGET['b']['K'][60][4].remove(58)
