@@ -1,7 +1,7 @@
 
 import unittest
 from collections import Counter
-from Chessir.game import Game, InvalidMove
+from Chessir_package.src.Chessir.game import Game, InvalidMove
 
 
 # Default FEN string

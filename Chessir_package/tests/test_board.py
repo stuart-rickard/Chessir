@@ -1,5 +1,5 @@
 
-from Chessir.board import Board
+from Chessir_package.src.Chessir.board import Board
 import unittest
 
 

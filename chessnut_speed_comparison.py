@@ -2,7 +2,7 @@
 # Note that it is necessary to install Chessnut for this script to work.
 
 from Chessnut import Game as ChessnutGame
-from Chessir.game import Game
+from Chessir_package.src.Chessir.game import Game
 import time
 
 def time_moves(fen_list):
