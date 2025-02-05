@@ -1,4 +1,4 @@
-from Chessir_package.src.Chessir.moves import RAYS_FROM_TARGET
+from src.Chessir.moves import RAYS_FROM_TARGET
 
 """
 The square_attacked function determines whether a given square is attacked by an opponent's piece.

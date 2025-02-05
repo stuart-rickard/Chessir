@@ -1,7 +1,7 @@
 
 import unittest
 
-from Chessir_package.src.Chessir.moves import MOVES, RAYS_FROM_TARGET
+from src.Chessir.moves import MOVES, RAYS_FROM_TARGET
 
 
 class MovesTest(unittest.TestCase):
