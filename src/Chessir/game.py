@@ -13,11 +13,11 @@ chess rules.
 
 from collections import namedtuple, Counter
 
-from src.Chessir.board import Board
-from src.Chessir.moves import MOVES
+from .board import Board
+from .moves import MOVES
 
 import copy
-from src.Chessir.square_attacked import square_attacked
+from .square_attacked import square_attacked
 
 # Define a named tuple with FEN field names to hold game state information
 State = namedtuple('State', ['player', 'rights', 'en_passant', 'ply', 'turn'])
